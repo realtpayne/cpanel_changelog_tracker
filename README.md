@@ -110,7 +110,7 @@ Fixed CPANEL-57884: Remove unusable cPanelID links from Manage External Authenti
 | `Failed: 404 Not Found` | The cPanel changelog page may be temporarily down; retry later |
 | `Usage: ...` | You forgot to pass the version argument |
 | `No entries found…` | The version has no changelog entries, or the search case doesn't match any `Fixed/Improved/Security` lines |
-| Perl syntax error | Make sure you're running with `perl` (e.g., `perl tracker.pl 10.4.0 CPANEL-00000`) |
+| Perl syntax error | Make sure you're running with `perl` (e.g., `perl tracker.pl 138 CPANEL-00000`) |
 
 ---
 
