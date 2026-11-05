@@ -4,6 +4,7 @@ use HTTP::Tiny;
 
 my ($version, $case) = @ARGV;
 die "Usage: $0 <version|all> [case]\n" unless defined $version;
+$case = uc $case if defined $case;
 
 my $http = HTTP::Tiny->new;
 
