@@ -69,10 +69,19 @@ sub check_page {
     my $printed_label   = 0;
     my $found           = 0;
     my $capture_cve     = 0;
+    my $parent;                 # nearest preceding non-CVE <li> in the same list
+    my $printed_parent  = 0;
+    my $any_li_re       = qr{^\s*<li>(.*)</li>\s*$};
 
     print "== $label ==\n" if $extra && !defined $wanted;
 
     for my $line (split /\n/, $res->{content}) {
+
+        # A new list or heading means the previous update no longer applies
+        if ($line =~ m{</ul>|<h[1-6]}) {
+            undef $parent;
+            $printed_parent = 0;
+        }
 
         # After a wanted entry matched, also print the (CVE-...) lines
         # that follow it, until the list or section ends.
@@ -105,8 +114,21 @@ sub check_page {
                     print "$current_heading\n";
                     $printed_heading = 1;
                 }
+                # Searching for a CVE: show the update it belongs to first
+                if ($text =~ /^\(CVE-/ && defined $parent && !$printed_parent) {
+                    print "$parent\n";
+                    $printed_parent = 1;
+                }
             }
             print "$text\n";
+        }
+        elsif ($line =~ $any_li_re) {
+            # Remember the most recent non-CVE entry as the "parent" update
+            my $t = $1;
+            if ($t !~ /^\(CVE-/) {
+                ($parent = $t) =~ s{</?code\b[^>]*>}{}gi;
+                $printed_parent = 0;
+            }
         }
     }
 
