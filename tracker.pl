@@ -79,6 +79,7 @@ sub check_page {
         }
         elsif ($line =~ $li_re) {
             my $text = $1;
+            $text =~ s{</?code>}{}g; # removes <code> and </code> from ea4 changelog output
             if (defined $wanted) {
                 $found = 1;
                 if ($extra && !$printed_label) {
