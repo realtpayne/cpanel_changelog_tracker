@@ -52,10 +52,14 @@ sub check_page {
         ? qr{<h[23][^>]*>\s*([^<]+?)\s*</h[23]>}
         : qr{<h3 id="\d+">([\d.]+)</h3>$};
 
+    my $is_cve = defined $wanted && $wanted =~ /^CVE-\d+-\d+$/;
+
     my $li_re;
     if (defined $wanted) {
-        $li_re = $extra
+        $li_re = ($extra || $is_cve)
+            # Extra pages, or any CVE search: match the ID anywhere in the entry
             ? qr{^\s*<li>(.*\Q$wanted\E\b.*)</li>\s*$}i
+            # Version pages, case search: "Fixed/Improved CPANEL-12345: ..."
             : qr{^<li>((Fixed|Improved)\s+\Q$wanted\E\b.*)</li>$}i;
     }
     else {
@@ -105,7 +109,7 @@ sub check_page {
             if (defined $wanted) {
                 $found = 1;
                 # Don't start capturing if the match was itself a CVE line
-                $capture_cve = 1 if $text !~ /^\(CVE-/;
+                $capture_cve = 1 if !$is_cve && $text !~ /^\(CVE-/;
                 if ($extra && !$printed_label) {
                     print "== $label ==\n";
                     $printed_label = 1;
