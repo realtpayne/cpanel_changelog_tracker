@@ -10,6 +10,19 @@ $case = uc $case if defined $case;
 my $http = HTTP::Tiny->new;
 my $base = "https://docs.cpanel.net/changelogs";
 
+# Strip <code> tags and decode common HTML entities for plain-text output
+sub clean {
+    my ($s) = @_;
+    $s =~ s{</?code\b[^>]*>}{}gi;
+    $s =~ s{&[lr]squo;}{'}g;
+    $s =~ s{&[lr]dquo;}{"}g;
+    $s =~ s{&lt;}{<}g;
+    $s =~ s{&gt;}{>}g;
+    $s =~ s{&quot;}{"}g;
+    $s =~ s{&amp;}{&}g;    # keep last so it doesn't double-decode
+    return $s;
+}
+
 # Numbered cPanel & WHM versions, from the releases page
 sub get_versions {
     my $res = $http->get("$base/releases/");
@@ -91,7 +104,7 @@ sub check_page {
         # that follow it, until the list or section ends.
         if ($capture_cve) {
             if ($line =~ m{^\s*<li>(\(CVE-\d+-\d+\).*)</li>\s*$}) {
-                (my $cve = $1) =~ s{</?code\b[^>]*>}{}gi;
+                my $cve = clean($1);
                 print "$cve\n";
                 next;
             }
@@ -104,8 +117,7 @@ sub check_page {
             print "$1\n" unless defined $wanted;
         }
         elsif ($line =~ $li_re) {
-            my $text = $1;
-            $text =~ s{</?code\b[^>]*>}{}gi;    # strip <code> and </code>
+            my $text = clean($1);
             if (defined $wanted) {
                 $found = 1;
                 # Don't start capturing if the match was itself a CVE line
@@ -130,7 +142,7 @@ sub check_page {
             # Remember the most recent non-CVE entry as the "parent" update
             my $t = $1;
             if ($t !~ /^\(CVE-/) {
-                ($parent = $t) =~ s{</?code\b[^>]*>}{}gi;
+                $parent = clean($t);
                 $printed_parent = 0;
             }
         }
