@@ -68,10 +68,23 @@ sub check_page {
     my $printed_heading = 0;
     my $printed_label   = 0;
     my $found           = 0;
+    my $capture_cve     = 0;
 
     print "== $label ==\n" if $extra && !defined $wanted;
 
     for my $line (split /\n/, $res->{content}) {
+
+        # After a wanted entry matched, also print the (CVE-...) lines
+        # that follow it, until the list or section ends.
+        if ($capture_cve) {
+            if ($line =~ m{^\s*<li>(\(CVE-\d+-\d+\).*)</li>\s*$}) {
+                (my $cve = $1) =~ s{</?code\b[^>]*>}{}gi;
+                print "$cve\n";
+                next;
+            }
+            $capture_cve = 0 if $line =~ m{</ul>|<h[1-6]};
+        }
+
         if ($line =~ $heading_re) {
             $current_heading = $1;
             $printed_heading = 0;
@@ -79,9 +92,11 @@ sub check_page {
         }
         elsif ($line =~ $li_re) {
             my $text = $1;
-            $text =~ s{</?code>}{}g; # removes <code> and </code> from ea4 changelog output
+            $text =~ s{</?code\b[^>]*>}{}gi;    # strip <code> and </code>
             if (defined $wanted) {
                 $found = 1;
+                # Don't start capturing if the match was itself a CVE line
+                $capture_cve = 1 if $text !~ /^\(CVE-/;
                 if ($extra && !$printed_label) {
                     print "== $label ==\n";
                     $printed_label = 1;
